@@ -54,7 +54,6 @@ podTemplate(
 
     stage('Deploy em Desenvolvimento') {
       sh "oc new-app rhforum-app-dev/rhforum:TestingCandidate-1.0 --name=rhforum --allow-missing-imagestream-tags=true -n rhforum-app-dev || echo 'app já existe'"
-      sh "oc set env dc/rhforum JAVA_OPTIONS=\"-Djava.net.preferIPv4Stack=true -Dswarm.context.path=/rhforum\" -n rhforum-app-dev"
       sh "oc patch dc rhforum --patch '{\"spec\": { \"triggers\": [ { \"type\": \"ImageChange\", \"imageChangeParams\": { \"containerNames\": [ \"rhforum\" ], \"from\": { \"kind\": \"ImageStreamTag\", \"namespace\": \"rhforum-app-dev\", \"name\": \"rhforum:TestingCandidate-$version\"}}}]}}' -n rhforum-app-dev"
       sh "oc set triggers dc/rhforum --remove-all -n rhforum-app-dev"
       sh "oc expose dc rhforum --port 8080 -n rhforum-app-dev || echo 'svc já existe'"
@@ -75,7 +74,7 @@ podTemplate(
             waitUntil {
 
                 def r = sh (
-                    script: 'curl -I -s http://rhforum-rhforum-app-dev.apps.ocp.rhbrlab.com/rhforum/rest/clientes | head -n 1 |cut -d$\' \' -f2',
+                    script: 'curl -I -s http://rhforum-rhforum-app-dev.apps.ocp.rhbrlab.com/rest/clientes | head -n 1 |cut -d$\' \' -f2',
                     returnStdout: true
                 ).trim()
                 return r.toInteger().equals(200);
@@ -93,8 +92,6 @@ podTemplate(
       sh "oc policy add-role-to-user edit system:serviceaccount:cicd-tools:jenkins -n rhforum-app-prod"
       sh "oc new-app rhforum-app-dev/rhforum:ProdReady-1.0 --name=rhforum-green --allow-missing-imagestream-tags=true -n rhforum-app-prod || echo 'app já existe'"
       sh "oc new-app rhforum-app-dev/rhforum:ProdReady-1.0 --name=rhforum-blue --allow-missing-imagestream-tags=true -n rhforum-app-prod || echo 'app já existe'"
-      sh "oc set env dc/rhforum-green JAVA_OPTIONS=\"-Djava.net.preferIPv4Stack=true -Dswarm.context.path=/rhforum\" -n rhforum-app-prod"
-      sh "oc set env dc/rhforum-blue JAVA_OPTIONS=\"-Djava.net.preferIPv4Stack=true -Dswarm.context.path=/rhforum\" -n rhforum-app-prod"
 
 
       sh "oc set resources dc/rhforum-green --limits=cpu='1000m',memory='750Mi' --requests=cpu='250m',memory='200Mi' -n rhforum-app-prod || echo 'Limit e CPUs já definidos!'"

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  annotations:
+    pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "cicd-tools","kind": "DeploymentConfig"}]'
+  name: roadshow-rj
+spec:
+  source:
+    git:
+      ref: master
+      uri: http://github.com/hodrigohamalho/rhforum.git
+    type: Git
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfilePath: jenkins-pipeline.groovy
