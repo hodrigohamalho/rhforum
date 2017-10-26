@@ -57,7 +57,7 @@ podTemplate(
       sh "oc patch dc rhforum --patch '{\"spec\": { \"triggers\": [ { \"type\": \"ImageChange\", \"imageChangeParams\": { \"containerNames\": [ \"rhforum\" ], \"from\": { \"kind\": \"ImageStreamTag\", \"namespace\": \"rhforum-app-dev\", \"name\": \"rhforum:TestingCandidate-$version\"}}}]}}' -n rhforum-app-dev"
       sh "oc set triggers dc/rhforum --remove-all -n rhforum-app-dev"
       sh "oc expose dc rhforum --port 8080 -n rhforum-app-dev || echo 'svc já existe'"
-      sh "oc expose svc rhforum --path=/rhforum -n rhforum-app-dev || echo 'route já existe'"
+      sh "oc expose svc rhforum -n rhforum-app-dev || echo 'route já existe'"
       //openshiftDeploy depCfg: 'rhforum', namespace: 'rhforum-app-dev', verbose: 'false', waitTime: '', waitUnit: 'sec'
       openshiftVerifyDeployment depCfg: 'rhforum', namespace: 'rhforum-app-dev', replicaCount: '1', verbose: 'false', verifyReplicaCount: 'false', waitTime: '', waitUnit: 'sec'
       openshiftVerifyService namespace: 'rhforum-app-dev', svcName: 'rhforum', verbose: 'false'
@@ -108,7 +108,7 @@ podTemplate(
       sh "oc set triggers dc/rhforum-blue --remove-all -n rhforum-app-prod"
       sh "oc expose dc rhforum-blue --port 8080 -n rhforum-app-prod || echo 'svc já existe'"
       sh "oc expose dc rhforum-green --port 8080 -n rhforum-app-prod || echo 'svc já existe'"
-      sh "oc expose svc/rhforum-green --path=/rhforum --name rhforum -n rhforum-app-prod || echo 'route já existe'"
+      sh "oc expose svc/rhforum-green --name rhforum -n rhforum-app-prod || echo 'route já existe'"
 
 
       sh "oc get route rhforum -n rhforum-app-prod -o jsonpath='{ .spec.to.name }' > activesvc.txt"
@@ -125,7 +125,7 @@ podTemplate(
 
       sh "oc patch dc ${dest} --patch '{\"spec\": { \"triggers\": [ { \"type\": \"ImageChange\", \"imageChangeParams\": { \"containerNames\": [ \"$dest\" ], \"from\": { \"kind\": \"ImageStreamTag\", \"namespace\": \"rhforum-app-dev\", \"name\": \"rhforum:ProdReady-$version\"}}}]}}' -n rhforum-app-prod"
 
-      sh "oc expose service ${dest} --path=/rhforum -n rhforum-app-prod || echo 'Rota já existe'"
+      sh "oc expose service ${dest} -n rhforum-app-prod || echo 'Rota já existe'"
 
       openshiftDeploy depCfg: dest, namespace: 'rhforum-app-prod', verbose: 'false', waitTime: '', waitUnit: 'sec'
       openshiftVerifyDeployment depCfg: dest, namespace: 'rhforum-app-prod', replicaCount: '1', verbose: 'false', verifyReplicaCount: 'true', waitTime: '', waitUnit: 'sec'
