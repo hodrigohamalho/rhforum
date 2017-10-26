@@ -47,7 +47,7 @@
           "version": "V11"
         },
         "host": "rhforum-rhforum-app-dev.apps.ocp.rhbrlab.com",
-        "path": "/rhforum/rest/clientes"
+        "path": "/rest/clientes"
       },
       "id": "8c0caed4-9667-4df5-9186-c0361ed5eb00",
       "lastModified": "2017-09-14T00:23:34.731-03:00",
@@ -91,7 +91,7 @@
           "version": "V11"
         },
         "host": "rhforum-rhforum-app-dev.apps.ocp.rhbrlab.com",
-        "path": "/rhforum/rest/clientes"
+        "path": "/rest/clientes"
       },
       "id": "8e3da52f-1514-489f-9a88-90b6463da6ce",
       "lastModified": "2017-09-14T00:24:25.094-03:00",
