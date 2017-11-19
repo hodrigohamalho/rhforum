@@ -1,0 +1,201 @@
+= DEMO RH-FORUM
+
+== Preparação
+
+. systemctl start docker
+
+. Abrir JBDS 11 e iniciar forge   (Ctrl + Shift 4)
+
+. Limpar clipboard
+
+. Limpar projetos *rhforum-app-dev* e *rhforum-app-prod* no Google Cloud
+
+  oc login https://console-dns:8443 --token=<pegar_da_console_web>
+  oc delete all --all -n rhforum-app-dev && oc delete all --all -n rhforum-app-prod
+  remover webhook do github
+
+. Acessar projeto Tools for CI/CD e acessar o GOGS (us: elvis, pw: padrão)
+
+. Criar repositório *rhforum*
+
+. Abrir terminal e rodar o comando
+
+  Linux ou Mac
+  oc cluster up 
+
+. Abrir um terminal no workspace do DevStudio 11
+
+  Mac
+  cd /Users/rramalho/workspace
+
+. Abrir a console do JBoss Forge
+
+. Wildfly Swarm plugin 
+
+  addon-install-from-git --url https://github.com/forge/wildfly-swarm-addon.git
+
+. Instalar plugin do swagger
+
+  addon-install-from-git --url https://github.com/guaxinim/swagger-addon.git
+
+. Instalar plugin gitignore
+
+  addon-install-from-git --url https://github.com/guaxinim/forge-plugin-gitignore.git
+
+. Instalar Quality Profiles no Sonar
+
+  Menu Administration
+    > System - Update Center - Available
+
+    CheckStyle
+    PMD
+    SonarJS
+    SonarJava
+
+    > Restart
+
+== Apresentação
+
+=== Criação da aplicação
+
+. Criação da aplicação com o Forge no JBoss Developer Studio
+
+  project-new --named rhforum --stack JAVA_EE_7 --type wildfly-swarm --top-level-package com.redhat.rhforum
+
+  mvn wildfly-swarm:run
+
+  jpa-new-entity --named Cliente
+  jpa-new-field --named nome
+  jpa-new-field --named sobrenome
+
+  wildfly-swarm-add-fraction --fractions bean-validation
+  constraint-add --constraint NotNull --on-property nome
+  constraint-add --constraint NotNull --on-property sobrenome
+
+  wildfly-swarm-add-fraction --fractions datasources
+  jdbc-add-dependency --db-type H2 --version 1.4.196
+
+  scaffold-generate --provider AngularJS --generate-rest-resources --targets com.redhat.rhforum.model.Cliente
+
+  wildfly-swarm-new-test --named ClienteTest
+
+  wildfly-swarm-add-fraction --fractions monitor
+
+  wildfly-swarm-detect-fractions --depend
+  wildfly-swarm-new-main-class
+
+  mvn package
+  nautilus . 
+  java -jar target/rhforum-swarm.jar 
+
+Preparar para o pipeline
+
+. Mudar para 1.0 no pom.xml (retirar snapshot) por causa do fabric8 e maven
+
+  <version>1.0</version>
+
+. Adicionar no espaço depois de </plugin>
+
+  <plugin>
+    <groupId>io.fabric8</groupId>
+    <artifactId>fabric8-maven-plugin</artifactId>
+    <version>3.1.92</version>
+    <executions>
+      <execution>
+        <goals>
+          <goal>resource</goal>
+        </goals>
+      </execution>
+    </executions>
+    <configuration>
+      <generator>
+        <includes>
+          <include>wildfly-swarm</include>
+        </includes>
+      </generator>
+    </configuration>
+  </plugin>
+
+
+. Abrir o Terminal e copiar os arquivos do jmeter e do test da API
+
+  copy-tests
+
+
+=== Openshift Local
+
+. Adicionar para o Openshift local
+
+  oc cluster up --version=v3.6.173.0.5
+  cd ~/workspace/rhforum
+  mvn clean fabric8:build fabric8:deploy -DskipTests
+
+. Criar rota no openshift para o contexto: */rhforum*
+
+. Conectar no Openshift via JBDS (usuario: developer)
+  
+  Mostrar Pod Logging
+  Mostrar Port Forward
+  Criar um Postgres via JBDS
+  psql -h 127.0.0.1 -p 5432 -d sampledb
+
+=== Openshift no GCE (Produção)
+
+. Abrir gogs e criar repositório rhforum
+
+. Voltar para o terminal na pasta do projeto:
+
+  git add .
+  git commit -m "first commit"
+  git remote add origin http://github.com/hodrigohamalho/rhforum.git
+  git push -u origin master
+
+. Adicionar pipeline no projeto CI-CD Tools (Google Cloud)
+
+*OBS: Modificar o nome do pipeline abaixo e a URI do Git.*
+
+----
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  annotations:
+    pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "cicd-tools","kind": "DeploymentConfig"}]'
+  name: roadshow-rj
+spec:
+  source:
+    git:
+      ref: master
+      uri: http://github.com/hodrigohamalho/rhforum.git
+    type: Git
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfilePath: jenkins-pipeline.groovy
+----
+
+. Executar Pipeline
+
+. Ver Rollout com nova versao
+
+
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
+-- Melhorar demo:
+    -- https://blog.openshift.com/fast-iterative-java-development-on-openshift-kubernetes-using-rsync/
+    -- https://developers.redhat.com/blog/?p=438229
+    -- https://developers.redhat.com/blog/2017/04/28/using-jboss-datagrid-in-openshift-paas/
+    -- https://blog.openshift.com/debugging-java-applications-on-openshift-kubernetes/
+    -- 
